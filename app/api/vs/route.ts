@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { createApiError } from "@/lib/server/api-validation";
+import { apiError } from "@/lib/api/errors";
 import { getVsFeedSnapshot } from "@/lib/server/vs-index";
 import { VS_CACHE_HEADERS } from "@/lib/server/vs-cache";
 
@@ -11,12 +11,8 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const refreshValue = searchParams.get("refresh");
     if (refreshValue && refreshValue !== "1") {
-      return NextResponse.json(
-        createApiError("invalid_parameter", "refresh must be 1 when provided"),
-        {
-          status: 400,
-        }
-      );
+      const err = apiError("invalid_request", "refresh must be 1 when provided", { field: "refresh" });
+      return NextResponse.json(err.body, { status: err.status, headers: err.headers });
     }
 
     const shouldRefresh = refreshValue === "1";
@@ -33,11 +29,7 @@ export async function GET(request: Request) {
       }
     );
   } catch {
-    return NextResponse.json(
-      createApiError("internal_error", "Unable to load VS feed"),
-      {
-        status: 500,
-      }
-    );
+    const err = apiError("internal_error", "Unable to load VS feed");
+    return NextResponse.json(err.body, { status: err.status, headers: err.headers });
   }
 }
